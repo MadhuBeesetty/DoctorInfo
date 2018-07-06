@@ -1,50 +1,41 @@
-var createError = require('http-errors');
 var express = require('express');
 var mongoose = require('mongoose');
 var bodyparser = require('body-parser');
 var cors = require('cors');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var doctorsRouter = require('./routes/doctors');
 
 var app = express();
 port = process.env.PORT || 3000;
-app.listen(port, function () {
+app.listen(4001, function () {
     console.log('Server started on:' + port);
 });
 
-// view engine setup
-app.set('views', path.join(__dirname, 'views'));
-app.set('view engine', 'jade');
+app.use(cors());
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+var mongojs = require('mongojs');
+var db = mongojs('mongodb://shruti:shruti019@ds125871.mlab.com:25871/listdoctor', ['doctors']);
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/api', doctorsRouter);
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+/* GET All doctors listing. */
+app.get('/getDoctors', (req, res) => {
+  console.log('i am here');
+    db.doctors.find(function (err, doctor) {
+        if (err){
+            console.log("Error");
+            res.send(err);
+        }
+      console.log(doctor);
+      res.send(doctor);
+    });
 });
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+/*single specific doctor */
+app.get('/doctor/:id', function (req, res, next) {
+    db.doctors.findOne({_id: mongojs.ObjectID(req.params.id)},function (err, doctor) {
+        if (err){
+            console.log("Error");
+            res.send(err);
+        }
+        res.json(doctor);
+    });
 });
-
-module.exports = app;
